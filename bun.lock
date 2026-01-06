@@ -27,6 +27,7 @@
         "@hello-pangea/dnd": "^18.0.1",
         "@hookform/resolvers": "^3.9.1",
         "@opencut/auth": "workspace:*",
+        "@opencut/automation": "workspace:*",
         "@opencut/db": "workspace:*",
         "@radix-ui/react-separator": "^1.1.7",
         "@t3-oss/env-core": "^0.13.8",
@@ -103,6 +104,17 @@
       },
       "devDependencies": {
         "@types/node": "^22.10.2",
+      },
+    },
+    "packages/automation": {
+      "name": "@opencut/automation",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.0.5",
+      },
+      "devDependencies": {
+        "@types/node": "^22.10.2",
+        "typescript": "5.8.3",
       },
     },
     "packages/db": {
@@ -318,6 +330,8 @@
     "@noble/hashes": ["@noble/hashes@1.8.0", "", {}, "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A=="],
 
     "@opencut/auth": ["@opencut/auth@workspace:packages/auth"],
+
+    "@opencut/automation": ["@opencut/automation@workspace:packages/automation"],
 
     "@opencut/db": ["@opencut/db@workspace:packages/db"],
 

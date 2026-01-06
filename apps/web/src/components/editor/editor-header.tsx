@@ -1,11 +1,13 @@
 "use client";
 
 import { Button } from "../ui/button";
-import { ChevronDown, ArrowLeft, SquarePen, Trash } from "lucide-react";
+import { ChevronDown, ArrowLeft, SquarePen, Trash, Sparkles } from "lucide-react";
 import { HeaderBase } from "../header-base";
 import { useProjectStore } from "@/stores/project-store";
+import { useTimelineStore } from "@/stores/timeline-store";
+import { useMediaStore } from "@/stores/media-store";
 import { KeyboardShortcutsHelp } from "../keyboard-shortcuts-help";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +23,19 @@ import { FaDiscord } from "react-icons/fa6";
 import { PanelPresetSelector } from "./panel-preset-selector";
 import { ExportButton } from "./export-button";
 import { ThemeToggle } from "../theme-toggle";
+import { SaveTemplateDialog } from "@/automation";
+import { useAutomationStore } from "@/automation/stores/automation-store";
+import type { OpenCutProject, OpenCutTrack, MediaFileInfo } from "@opencut/automation";
+import type { MediaFile } from "@/types/media";
 
 export function EditorHeader() {
   const { activeProject, renameProject, deleteProject } = useProjectStore();
+  const { tracks } = useTimelineStore();
+  const { mediaFiles } = useMediaStore();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
+  const { openExtractDialog, isExtractDialogOpen, closeExtractDialog, extractionSource } = useAutomationStore();
   const router = useRouter();
 
   const handleNameSave = async (newName: string) => {
@@ -46,6 +56,45 @@ export function EditorHeader() {
       setIsDeleteDialogOpen(false);
       router.push("/projects");
     }
+  };
+
+  // Convert project data for automation template extraction
+  const handleSaveAsTemplate = () => {
+    if (!activeProject || !tracks) return;
+
+    // Convert to automation-compatible format
+    const project: OpenCutProject = {
+      id: activeProject.id,
+      name: activeProject.name,
+      canvasSize: activeProject.canvasSize,
+      backgroundColor: activeProject.backgroundColor,
+      backgroundType: activeProject.backgroundType,
+      fps: activeProject.fps,
+    };
+
+    // Convert tracks
+    const automationTracks: OpenCutTrack[] = tracks.map((track) => ({
+      id: track.id,
+      name: track.name,
+      type: track.type,
+      elements: track.elements,
+      muted: track.muted,
+      isMain: track.isMain,
+    }));
+
+    // Convert media files to file info (filter out ephemeral items)
+    const mediaFileInfos: MediaFileInfo[] = mediaFiles
+      .filter((item: MediaFile) => !item.ephemeral)
+      .map((item: MediaFile) => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        duration: item.duration,
+        width: item.width,
+        height: item.height,
+      }));
+
+    openExtractDialog(project, automationTracks, mediaFileInfos);
   };
 
   const leftContent = (
@@ -73,6 +122,13 @@ export function EditorHeader() {
           >
             <SquarePen className="h-4 w-4" />
             Rename project
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="flex items-center gap-1.5"
+            onClick={handleSaveAsTemplate}
+          >
+            <Sparkles className="h-4 w-4 text-primary" />
+            Save as Template
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
@@ -107,6 +163,13 @@ export function EditorHeader() {
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDelete}
         projectName={activeProject?.name || ""}
+      />
+      <SaveTemplateDialog
+        isOpen={isExtractDialogOpen}
+        onOpenChange={(open) => !open && closeExtractDialog()}
+        onSuccess={(templateId) => {
+          console.log("Template saved:", templateId);
+        }}
       />
     </div>
   );

@@ -38,7 +38,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjectStore } from "@/stores/project-store";
 import { useTimelineStore } from "@/stores/timeline-store";
+import { useAutomationStore } from "@/automation/stores/automation-store";
 import type { TProject } from "@/types/project";
+import { Sparkles } from "lucide-react";
+import { useAutomation } from "@/automation/hooks/use-automation";
+import { createProjectFromTemplate } from "@/automation/utils/create-project";
+import { TemplateSelector, PlaceholderForm } from "@/automation";
+import type { AutomationTemplate, AutomationInputs } from "@opencut/automation";
 
 export default function ProjectsPage() {
   const {
@@ -63,6 +69,47 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState("createdAt-desc");
   const router = useRouter();
+
+  // Automation state
+  const {
+      isTemplateSelectorOpen,
+      openTemplateSelector,
+      closeTemplateSelector,
+      applyTemplate
+  } = useAutomation();
+  const [selectedTemplateForApply, setSelectedTemplateForApply] = useState<AutomationTemplate | null>(null);
+  const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
+
+  // Handle template selection
+  const handleTemplateSelect = async (templateId: string) => {
+      const { loadTemplate } = useAutomationStore.getState(); // helper to get template data
+      const template = await loadTemplate(templateId);
+      if (template) {
+          setSelectedTemplateForApply(template);
+          // closeTemplateSelector is handled by the component's internal logic usually, but here we explicitly manage flow
+          closeTemplateSelector();
+          setIsApplyDialogOpen(true);
+      }
+  };
+
+  // Handle template application
+  const handleApplyTemplate = async (inputs: AutomationInputs) => {
+      if (!selectedTemplateForApply) return;
+      
+      try {
+          // Generate project in memory
+          const generated = await applyTemplate(selectedTemplateForApply, inputs);
+          
+          // Persist to storage
+          const projectId = await createProjectFromTemplate(generated);
+          
+          setIsApplyDialogOpen(false);
+          router.push(`/editor/${projectId}`);
+      } catch (error) {
+          console.error("Failed to apply template:", error);
+          // Toast is handled by store/utility
+      }
+  };
 
   const getProjectThumbnail = useCallback(
     async (projectId: string): Promise<string | null> => {
@@ -168,7 +215,10 @@ export default function ProjectsPage() {
               )}
             </div>
           ) : (
-            <CreateButton onClick={handleCreateProject} />
+            <CreateButton 
+                onCreateProject={handleCreateProject} 
+                onFromTemplate={openTemplateSelector} 
+            />
           )}
         </div>
       </div>
@@ -214,7 +264,10 @@ export default function ProjectsPage() {
                 >
                   Select Projects
                 </Button>
-                <CreateButton onClick={handleCreateProject} />
+                <CreateButton 
+                    onCreateProject={handleCreateProject} 
+                    onFromTemplate={openTemplateSelector}
+                />
               </div>
             )}
           </div>
@@ -337,7 +390,10 @@ export default function ProjectsPage() {
             ))}
           </div>
         ) : savedProjects.length === 0 ? (
-          <NoProjects onCreateProject={handleCreateProject} />
+          <NoProjects 
+            onCreateProject={handleCreateProject} 
+            onFromTemplate={openTemplateSelector}
+          />
         ) : sortedProjects.length === 0 ? (
           <NoResults
             searchQuery={searchQuery}
@@ -364,6 +420,21 @@ export default function ProjectsPage() {
         onOpenChange={setIsBulkDeleteDialogOpen}
         onConfirm={handleBulkDelete}
       />
+      
+      <TemplateSelector
+        isOpen={isTemplateSelectorOpen}
+        onOpenChange={(open) => !open && closeTemplateSelector()}
+        onSelect={handleTemplateSelect}
+      />
+      
+      {selectedTemplateForApply && (
+        <PlaceholderForm
+            isOpen={isApplyDialogOpen}
+            onOpenChange={setIsApplyDialogOpen}
+            template={selectedTemplateForApply}
+            onSubmit={handleApplyTemplate}
+        />
+      )}
     </div>
   );
 }
@@ -594,16 +665,42 @@ function ProjectCard({
   );
 }
 
-function CreateButton({ onClick }: { onClick?: () => void }) {
+function CreateButton({ 
+    onCreateProject, 
+    onFromTemplate 
+}: { 
+    onCreateProject: () => void;
+    onFromTemplate: () => void;
+}) {
   return (
-    <Button className="flex" onClick={onClick}>
-      <Plus className="size-4!" />
-      <span className="text-sm font-medium">New project</span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="flex items-center gap-2">
+          <Plus className="size-4!" />
+          <span className="text-sm font-medium">New project</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onCreateProject}>
+          <Plus className="mr-2 h-4 w-4" />
+          Empty Project
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onFromTemplate}>
+          <Sparkles className="mr-2 h-4 w-4 text-primary" />
+          From Template
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-function NoProjects({ onCreateProject }: { onCreateProject: () => void }) {
+function NoProjects({ 
+    onCreateProject,
+    onFromTemplate
+}: { 
+    onCreateProject: () => void;
+    onFromTemplate: () => void;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mb-4">
@@ -614,10 +711,16 @@ function NoProjects({ onCreateProject }: { onCreateProject: () => void }) {
         Start creating your first video project. Import media, edit, and export
         professional videos.
       </p>
-      <Button size="lg" className="gap-2" onClick={onCreateProject}>
-        <Plus className="h-4 w-4" />
-        Create Your First Project
-      </Button>
+      <div className="flex gap-4">
+        <Button size="lg" className="gap-2" onClick={onCreateProject}>
+            <Plus className="h-4 w-4" />
+            New Project
+        </Button>
+        <Button size="lg" variant="secondary" className="gap-2" onClick={onFromTemplate}>
+            <Sparkles className="h-4 w-4" />
+            From Template
+        </Button>
+      </div>
     </div>
   );
 }
