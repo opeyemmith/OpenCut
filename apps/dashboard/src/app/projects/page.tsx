@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { 
   Plus, 
   Rocket, 
@@ -8,6 +9,18 @@ import {
   FolderOpen 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { launchEditor, launchNewProject } from "@clipfactory/opencut-engine";
+import { handoffManager } from "@/lib/handoff-manager";
+
+// Mock normalized project for MVP testing - simulating DB retrieval
+const getMockProjectPayload = (id: string, name: string) => ({
+  id,
+  version: "1.0.0", 
+  metadata: { name, created: Date.now(), modified: Date.now() },
+  canvas: { width: 1920, height: 1080, fps: 30 },
+  tracks: [], // Empty for now
+  mediaManifest: { files: [] }
+});
 
 const mockProjects = [
   {
@@ -51,6 +64,20 @@ const statusLabels = {
 };
 
 export default function ProjectsPage() {
+  const handleLaunch = (project: { id: string, name: string }) => {
+    // 1. Open the window first (sync response to user click)
+    const win = launchEditor(project.id);
+    
+    if (win) {
+      // 2. Retrieve data (mock for now, w/ async DB call in real app)
+      const payload = getMockProjectPayload(project.id, project.name);
+      
+      // 3. Initiate the handoff protocol
+      // @ts-ignore - Partial types for mock
+      handoffManager.initiateHandoff(win, payload);
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1400px] animate-in fade-in duration-500">
       <header className="flex justify-between items-start mb-8">
@@ -58,7 +85,10 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold mb-1 text-[var(--text-primary)] tracking-tight">Projects</h1>
           <p className="text-[var(--text-secondary)]">Generated videos from your templates</p>
         </div>
-        <button className="flex items-center gap-2 px-5 py-3 bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-dark)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 relative overflow-hidden group">
+        <button 
+          onClick={() => launchNewProject()}
+          className="flex items-center gap-2 px-5 py-3 bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-dark)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 relative overflow-hidden group"
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
           <Plus className="w-5 h-5" />
           <span>New Project</span>
@@ -119,6 +149,7 @@ export default function ProjectsPage() {
                 <td className="p-4">
                   <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
+                      onClick={() => handleLaunch(project)}
                       className="p-2 border border-[var(--border-default)] rounded-md text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-white hover:bg-[var(--accent)] transition-all"
                       title="Open in OpenCut"
                     >

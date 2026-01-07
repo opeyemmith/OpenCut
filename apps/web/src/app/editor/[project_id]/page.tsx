@@ -62,6 +62,27 @@ export default function Editor() {
         return;
       }
 
+      // Special case: "new" project
+      if (projectId === "new") {
+        try {
+          // If we're already active on a new project (unpersisted), stop
+          if (activeProject && !activeProject.id) return;
+
+          isInitializingRef.current = true;
+          const newId = await createNewProject("Untitled Project");
+          
+          if (!isCancelled) {
+             // Replace URL with the new concrete ID so refreshing works
+             router.replace(`/editor/${newId}`);
+          }
+        } catch (error) {
+           console.error("Failed to init new project", error);
+        } finally {
+           isInitializingRef.current = false;
+        }
+        return;
+      }
+
       // Check if project is already loaded
       if (activeProject?.id === projectId) {
         return;

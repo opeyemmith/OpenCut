@@ -1,15 +1,16 @@
-"use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { launchProjectsBrowser } from "@clipfactory/opencut-engine";
+import { useAuthStore } from "@/stores/auth-store";
 import { 
   Home,
   Film,
   FolderOpen,
   Zap,
   Settings,
-  Rocket 
+  Rocket,
+  LogOut,
+  User 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuthStore();
 
   const handleOpenEditor = () => {
     launchProjectsBrowser();
@@ -61,7 +63,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-[var(--border-default)]">
+      <div className="p-4 border-t border-[var(--border-default)] space-y-4">
         <button
           onClick={handleOpenEditor}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-dark)] transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-purple-900/20 hover:shadow-purple-700/40 relative overflow-hidden group"
@@ -70,6 +72,25 @@ export function Sidebar() {
           <Rocket className="w-4 h-4" />
           <span>Open OpenCut</span>
         </button>
+
+        {user && (
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white">
+              {user.name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user.name}</p>
+              <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
+            </div>
+            <button 
+              onClick={logout}
+              className="text-[var(--text-muted)] hover:text-[var(--error)] transition-colors p-1"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
