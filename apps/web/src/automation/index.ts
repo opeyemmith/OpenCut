@@ -45,3 +45,4 @@ export { useAutomation } from "./hooks/use-automation";
 export { SaveTemplateDialog } from "./components/save-template-dialog";
 export { TemplateSelector } from "./components/template-selector";
 export { PlaceholderForm } from "./components/placeholder-form";
+export { EditTemplateDialog } from "./components/edit-template-dialog";

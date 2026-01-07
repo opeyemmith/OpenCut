@@ -1,0 +1,22 @@
+{
+  "name": "@clipfactory/opencut-engine",
+  "version": "0.0.1",
+  "description": "OpenCut integration bridge for ClipFactory platform",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clipfactory/platform-core": "workspace:*",
+    "@clipfactory/events": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

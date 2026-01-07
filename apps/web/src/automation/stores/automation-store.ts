@@ -59,6 +59,7 @@ interface AutomationActions {
   saveTemplate: (template: AutomationTemplate) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
   duplicateTemplate: (id: string, newName: string) => Promise<void>;
+  updateTemplateMetadata: (id: string, updates: { name?: string; description?: string }) => Promise<void>;
 
   // Template extraction
   extractTemplate: (
@@ -222,6 +223,42 @@ export const useAutomationStore = create<AutomationStore>((set, get) => ({
       console.error("Failed to duplicate template:", error);
       set({
         error: error instanceof Error ? error.message : "Failed to duplicate template",
+        isSaving: false,
+      });
+      throw error;
+    }
+  },
+
+  // Update template metadata
+  updateTemplateMetadata: async (id: string, updates: { name?: string; description?: string }) => {
+    set({ isSaving: true, error: null });
+
+    try {
+      const template = await storageAdapter.loadTemplate(id);
+      if (!template) {
+        throw new Error("Template not found");
+      }
+
+      const updatedTemplate = {
+        ...template,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await storageAdapter.saveTemplate(updatedTemplate);
+      
+      // Update current template if it's the one being edited
+      const { currentTemplate } = get();
+      if (currentTemplate?.id === id) {
+          set({ currentTemplate: updatedTemplate });
+      }
+
+      await get().loadTemplates();
+      set({ isSaving: false });
+    } catch (error) {
+      console.error("Failed to update template:", error);
+      set({
+        error: error instanceof Error ? error.message : "Failed to update template",
         isSaving: false,
       });
       throw error;

@@ -1,0 +1,37 @@
+{
+  "name": "@clipfactory/dashboard",
+  "version": "0.0.1",
+  "private": true,
+  "description": "ClipFactory Creator Dashboard - AI Video Automation Platform",
+  "scripts": {
+    "dev": "next dev --turbopack -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "^15.5.7",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zustand": "^5.0.5",
+    "sonner": "^2.0.5",
+    "lucide-react": "^0.468.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.5",
+    "@radix-ui/react-dialog": "^1.1.4",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@clipfactory/platform-core": "workspace:*",
+    "@clipfactory/opencut-engine": "workspace:*",
+    "@clipfactory/events": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@tailwindcss/postcss": "^4.1.11",
+    "postcss": "^8",
+    "tailwindcss": "^4.1.11",
+    "typescript": "5.8.3"
+  }
+}

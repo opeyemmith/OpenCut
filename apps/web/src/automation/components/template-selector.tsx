@@ -22,6 +22,7 @@ import {
   MoreHorizontal,
   Loader2,
   FolderOpen,
+  Pencil,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAutomationStore } from "../stores/automation-store";
+import { EditTemplateDialog } from "./edit-template-dialog";
 import type { TemplateSummary } from "@opencut/automation";
 
 interface TemplateSelectorProps {
@@ -52,6 +54,10 @@ export function TemplateSelector({
 }: TemplateSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  // Edit state
+  const [templateToEdit, setTemplateToEdit] = useState<TemplateSummary | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const {
     templates,
@@ -78,6 +84,12 @@ export function TemplateSelector({
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleEdit = (template: TemplateSummary, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTemplateToEdit(template);
+    setIsEditDialogOpen(true);
+  };
 
   const handleSelect = () => {
     if (selectedId) {
@@ -182,6 +194,7 @@ export function TemplateSelector({
                   template={template}
                   isSelected={selectedId === template.id}
                   onClick={() => setSelectedId(template.id)}
+                  onEdit={(e) => handleEdit(template, e)}
                   onDelete={(e) => handleDelete(template.id, e)}
                   onDuplicate={(e) => handleDuplicate(template, e)}
                   onExport={(e) => handleExport(template.id, template.name, e)}
@@ -200,6 +213,12 @@ export function TemplateSelector({
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      <EditTemplateDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        template={templateToEdit}
+      />
     </Dialog>
   );
 }
@@ -211,6 +230,7 @@ function TemplateCard({
   template,
   isSelected,
   onClick,
+  onEdit,
   onDelete,
   onDuplicate,
   onExport,
@@ -218,6 +238,7 @@ function TemplateCard({
   template: TemplateSummary;
   isSelected: boolean;
   onClick: () => void;
+  onEdit: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
   onDuplicate: (e: React.MouseEvent) => void;
   onExport: (e: React.MouseEvent) => void;
@@ -251,36 +272,50 @@ function TemplateCard({
         </div>
 
         {/* Actions Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onDuplicate}>
-              <Copy className="mr-2 h-4 w-4" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={onDelete}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Actions Dropdown */}
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }} 
+          onPointerDown={(e) => {
+             e.stopPropagation();
+          }}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onDuplicate}>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onEdit}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
   );
