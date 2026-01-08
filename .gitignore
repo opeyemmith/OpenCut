@@ -23,6 +23,7 @@
 node_modules
 .cursorignore
 .turbo
+.next
 
 *.env
 

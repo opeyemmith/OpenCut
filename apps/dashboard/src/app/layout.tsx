@@ -2,6 +2,7 @@
 
 import { Toaster } from "sonner";
 import { Sidebar } from "@/components/sidebar";
+import { Header } from "@/components/header";
 import { AuthGuard } from "@/components/auth-guard";
 import { InitialDataLoader } from "@/components/initial-data-loader";
 import { usePathname } from "next/navigation";
@@ -25,13 +26,16 @@ export default function RootLayout({
         <AuthGuard>
           <InitialDataLoader />
           {!isLoginPage && <Sidebar />}
-          <main 
-            className={`min-h-screen relative z-0 transition-all duration-300 ease-in-out ${
+          <div 
+            className={`min-h-screen flex flex-col relative z-0 transition-all duration-300 ease-in-out ${
               !isLoginPage ? "pl-[260px]" : ""
             }`}
           >
-            {children}
-          </main>
+            {!isLoginPage && <Header />}
+            <main className="flex-1">
+              {children}
+            </main>
+          </div>
         </AuthGuard>
         <Toaster position="bottom-right" richColors theme="dark" />
       </body>

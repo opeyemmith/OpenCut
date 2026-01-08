@@ -9,8 +9,9 @@ import {
   Zap,
   Settings,
   Rocket,
-  LogOut,
-  User 
+  User,
+  Wrench,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,8 @@ const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/templates", label: "Templates", icon: Film },
   { href: "/projects", label: "Projects", icon: FolderOpen },
+  { href: "/characters", label: "Characters", icon: Users },
+  { href: "/tools", label: "Tools", icon: Wrench },
   { href: "/batch", label: "Batch Jobs", icon: Zap },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -72,25 +75,6 @@ export function Sidebar() {
           <Rocket className="w-4 h-4" />
           <span>Open OpenCut</span>
         </button>
-
-        {user && (
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white">
-              {user.name.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--text-primary)] truncate">{user.name}</p>
-              <p className="text-xs text-[var(--text-muted)] truncate">{user.email}</p>
-            </div>
-            <button 
-              onClick={logout}
-              className="text-[var(--text-muted)] hover:text-[var(--error)] transition-colors p-1"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        )}
       </div>
     </aside>
   );

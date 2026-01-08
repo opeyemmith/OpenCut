@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { dbAdapter } from '@/adapters/indexed-db';
+import { PlaceholderDefinition } from '@clipfactory/platform-core/types';
 
 // ============================================
 // Types
@@ -12,6 +13,7 @@ export interface DashboardTemplate {
   description: string;
   thumbnail?: string;
   placeholderCount: number;
+  placeholders?: PlaceholderDefinition[]; // Optional for backward compatibility
   duration: number;
   createdAt: Date;
   updatedAt: Date;

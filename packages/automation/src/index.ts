@@ -32,3 +32,7 @@ export * from "./utils/index";
 
 // Feature flags
 export * from "./feature-flags";
+
+// Rules Engine
+export * from "./engine";
+export * from "./rules/text-resizer";

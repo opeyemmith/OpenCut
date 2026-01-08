@@ -6,8 +6,90 @@ import {
   Clock,
   Plus,
   Rocket,
-  Zap
+  Zap,
+  Video,
+  FileVideo,
+  Image,
+  Wand2,
+  ArrowRight,
+  Star
 } from "lucide-react";
+
+// Featured tools data (subset from tools-data)
+const featuredTools = [
+  {
+    id: "short-video",
+    title: "Short Videos",
+    description: "Generate viral short-form videos from text or long videos.",
+    icon: Video,
+    href: "/tools",
+    color: "var(--accent)",
+  },
+  {
+    id: "long-video",
+    title: "Long-form Videos",
+    description: "Create documentary-style long videos with AI.",
+    icon: FileVideo,
+    href: "/tools",
+    color: "var(--accent)",
+  },
+  {
+    id: "image-gen",
+    title: "Image Generation",
+    description: "Create stunning visuals from text prompts.",
+    icon: Image,
+    href: "/tools",
+    color: "var(--accent)",
+  },
+  {
+    id: "img2img",
+    title: "Image to Image",
+    description: "Transform images into new styles.",
+    icon: Wand2,
+    href: "/tools",
+    badge: "New",
+  },
+];
+
+// Popular templates data with enhanced visuals
+const popularTemplates = [
+  {
+    id: "1",
+    name: "YouTube Shorts Template",
+    uses: 1250,
+    category: "Short Form",
+    duration: "0:30 - 1:00",
+    gradient: "from-red-500 to-orange-500",
+    rating: 4.9,
+  },
+  {
+    id: "2",
+    name: "TikTok Viral Format",
+    uses: 980,
+    category: "Short Form",
+    duration: "0:15 - 0:60",
+    gradient: "from-pink-500 to-purple-500",
+    rating: 4.8,
+  },
+  {
+    id: "3",
+    name: "Product Showcase",
+    uses: 756,
+    category: "Marketing",
+    duration: "0:30 - 2:00",
+    gradient: "from-blue-500 to-cyan-500",
+    rating: 4.7,
+  },
+  {
+    id: "4",
+    name: "Instagram Reels",
+    uses: 654,
+    category: "Social Media",
+    duration: "0:15 - 0:90",
+    gradient: "from-purple-500 to-pink-500",
+    rating: 4.6,
+  },
+];
 
 export default function Home() {
   return (
@@ -93,39 +175,89 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recent Activity */}
+      {/* Featured Tools Showcase */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Featured Tools</h2>
+          <Link 
+            href="/tools" 
+            className="text-sm text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors flex items-center gap-1 group"
+          >
+            View all tools
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {featuredTools.map((tool) => {
+            const Icon = tool.icon;
+            return (
+              <Link
+                key={tool.id}
+                href={tool.href}
+                className="relative p-5 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl hover:border-[var(--accent)] transition-all duration-300 hover:-translate-y-1 card-glow group"
+              >
+                {tool.badge && (
+                  <span className="absolute top-3 right-3 px-2 py-0.5 text-xs font-semibold rounded-full bg-[var(--accent-subtle)] text-[var(--accent)]">
+                    {tool.badge}
+                  </span>
+                )}
+                <div className="w-10 h-10 flex items-center justify-center bg-[var(--accent-subtle)] rounded-lg mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <Icon className="w-5 h-5 text-[var(--accent)]" />
+                </div>
+                <h3 className="font-semibold text-[var(--text-primary)] mb-1">{tool.title}</h3>
+                <p className="text-xs text-[var(--text-muted)] line-clamp-2">{tool.description}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Popular Templates */}
       <section>
-        <h2 className="text-xl font-semibold mb-4 text-[var(--text-primary)]">Recent Activity</h2>
-        <div className="bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl overflow-hidden shadow-lg">
-          <div className="flex items-center gap-4 p-4 border-b border-[var(--border-default)] hover:bg-[var(--bg-elevated)] transition-colors">
-            <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center bg-[var(--success-bg)] rounded-lg">
-              <CheckCircle className="w-5 h-5 text-[var(--success)]" />
-            </div>
-            <div className="flex-1 min-w-0 flex justify-between items-center gap-4">
-              <span className="text-[var(--text-primary)] truncate font-medium">Completed: January Shorts Batch</span>
-              <span className="text-xs text-[var(--text-muted)] flex-shrink-0 whitespace-nowrap">2 hours ago</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 p-4 border-b border-[var(--border-default)] hover:bg-[var(--bg-elevated)] transition-colors">
-            <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center bg-[var(--accent-subtle)] rounded-lg">
-              <Film className="w-5 h-5 text-[var(--accent)]" />
-            </div>
-            <div className="flex-1 min-w-0 flex justify-between items-center gap-4">
-              <span className="text-[var(--text-primary)] truncate font-medium">Created template: YouTube Shorts Template</span>
-              <span className="text-xs text-[var(--text-muted)] flex-shrink-0 whitespace-nowrap">Yesterday</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 p-4 hover:bg-[var(--bg-elevated)] transition-colors">
-            <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center bg-[var(--bg-elevated)] rounded-lg">
-              <FolderOpen className="w-5 h-5 text-[var(--text-muted)]" />
-            </div>
-            <div className="flex-1 min-w-0 flex justify-between items-center gap-4">
-              <span className="text-[var(--text-primary)] truncate font-medium">New project: Product Launch Videos</span>
-              <span className="text-xs text-[var(--text-muted)] flex-shrink-0 whitespace-nowrap">2 days ago</span>
-            </div>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Popular Templates</h2>
+          <Link 
+            href="/templates" 
+            className="text-sm text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors flex items-center gap-1 group"
+          >
+            Browse all
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {popularTemplates.map((template) => (
+            <Link
+              key={template.id}
+              href="/templates"
+              className="group bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl overflow-hidden hover:border-[var(--accent)] transition-all duration-300 hover:-translate-y-1 card-glow"
+            >
+              {/* Thumbnail with gradient */}
+              <div className={`relative h-32 bg-gradient-to-br ${template.gradient} flex items-center justify-center`}>
+                <Film className="w-12 h-12 text-white/80 group-hover:scale-110 transition-transform duration-300" />
+                {/* Category badge */}
+                <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-medium rounded-full bg-black/30 backdrop-blur-sm text-white">
+                  {template.category}
+                </span>
+                {/* Duration */}
+                <span className="absolute bottom-2 right-2 px-2 py-0.5 text-[10px] font-medium rounded bg-black/40 backdrop-blur-sm text-white flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {template.duration}
+                </span>
+              </div>
+              
+              {/* Content */}
+              <div className="p-4">
+                <h3 className="font-semibold text-[var(--text-primary)] mb-2 truncate">{template.name}</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
+                    <span className="text-sm font-medium text-[var(--text-primary)]">{template.rating}</span>
+                  </div>
+                  <span className="text-xs text-[var(--text-muted)]">{template.uses.toLocaleString()} uses</span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
     </div>

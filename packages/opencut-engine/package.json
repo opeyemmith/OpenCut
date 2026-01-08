@@ -13,10 +13,12 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@clipfactory/events": "workspace:*",
     "@clipfactory/platform-core": "workspace:*",
-    "@clipfactory/events": "workspace:*"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/uuid": "^11.0.0",
     "typescript": "5.8.3"
   }
 }
