@@ -1,5 +1,7 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/batch/[id]/page": "app/batch/[id]/page.js",
+  "/batch/create/page": "app/batch/create/page.js",
   "/batch/page": "app/batch/page.js",
   "/characters/page": "app/characters/page.js",
   "/login/page": "app/login/page.js",

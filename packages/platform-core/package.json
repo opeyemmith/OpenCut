@@ -14,7 +14,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@clipfactory/events": "workspace:*"
+    "@clipfactory/events": "workspace:*",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "typescript": "5.8.3"

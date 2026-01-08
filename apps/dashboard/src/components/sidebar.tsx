@@ -35,7 +35,7 @@ export function Sidebar() {
 
   return (
     <aside className="w-[260px] h-screen bg-[var(--bg-glass)] backdrop-blur-md border-r border-[var(--border-default)] fixed left-0 top-0 flex flex-col z-50">
-      <div className="flex items-center gap-3 p-6 border-b border-[var(--border-default)]">
+      <div className="flex items-center gap-3 h-16 px-6 border-b border-[var(--border-default)]">
         <Film className="w-7 h-7 text-[var(--accent)]" />
         <span className="text-xl font-bold gradient-text">ClipFactory</span>
       </div>

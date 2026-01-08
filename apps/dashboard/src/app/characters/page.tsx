@@ -135,8 +135,9 @@ export default function CharactersPage() {
 
           <button
             onClick={() => { setEditingCharacter(null); setIsDialogOpen(true); }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] text-white font-medium rounded-lg hover:bg-[var(--accent-dark)] transition-all hover:-translate-y-0.5 shadow-lg shadow-purple-900/20"
+            className="flex items-center gap-2 px-5 py-3 bg-[var(--accent)] text-white font-semibold rounded-lg hover:bg-[var(--accent-dark)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 relative overflow-hidden group"
           >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
             <Plus className="w-5 h-5" />
             Create Character
           </button>
@@ -275,8 +276,27 @@ export default function CharactersPage() {
       </div>
 
       {/* Characters Grid */}
-      {filteredCharacters.length > 0 ? (
+      {/* Characters Grid */}
+      {(activeTab === "private" || filteredCharacters.length > 0) ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Create New Card - Always first in private tab */}
+          {activeTab === "private" && (
+            <article
+              onClick={() => { setEditingCharacter(null); setIsDialogOpen(true); }}
+              className="min-h-[380px] border-2 border-dashed border-[var(--border-default)] rounded-xl flex items-center justify-center cursor-pointer hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)]/10 transition-all duration-300 group h-full"
+            >
+              <div className="text-center text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors px-6">
+                <div className="w-16 h-16 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:bg-[var(--accent)]/10">
+                  <Plus className="w-8 h-8 group-hover:text-[var(--accent)] transition-colors" />
+                </div>
+                <span className="font-medium text-lg">Create New Character</span>
+                <p className="text-sm mt-3 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)] transition-colors">
+                  Design a unique character with custom appearance and voice for your videos.
+                </p>
+              </div>
+            </article>
+          )}
+
           {filteredCharacters.map((character) => (
             <CharacterCard
               key={character.id}
@@ -300,26 +320,29 @@ export default function CharactersPage() {
           <p className="text-[var(--text-muted)] max-w-md mb-6">
             {hasActiveFilters
               ? "Try adjusting your filters or search query."
-              : activeTab === "private"
-                ? "Create your first AI character to start generating personalized video content."
-                : "No public characters available yet."}
+              : "No public characters available yet."}
           </p>
-          {hasActiveFilters ? (
+          {hasActiveFilters && (
             <button
               onClick={clearFilters}
               className="px-5 py-2.5 text-sm font-medium rounded-lg border border-[var(--border-default)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
             >
               Clear Filters
             </button>
-          ) : activeTab === "private" ? (
-            <button
-              onClick={() => setIsDialogOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] text-white font-medium rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Create Your First Character
-            </button>
-          ) : null}
+          )}
+        </div>
+      )}
+
+      {/* Empty Search State for Private Tab */}
+      {activeTab === "private" && filteredCharacters.length === 0 && hasActiveFilters && (
+        <div className="text-center py-12">
+          <p className="text-[var(--text-muted)]">No characters found matching your filters.</p>
+          <button
+            onClick={clearFilters}
+            className="mt-4 px-4 py-2 text-sm text-[var(--accent)] hover:text-[var(--accent-light)] transition-colors"
+          >
+            Clear Filters
+          </button>
         </div>
       )}
 

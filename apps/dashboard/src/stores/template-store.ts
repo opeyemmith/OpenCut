@@ -1,23 +1,30 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { dbAdapter } from '@/adapters/indexed-db';
-import { PlaceholderDefinition } from '@clipfactory/platform-core/types';
+import { Template, PlaceholderDefinition } from '@clipfactory/platform-core/types';
 
 // ============================================
 // Types
 // ============================================
 
-export interface DashboardTemplate {
+/**
+ * DashboardTemplate extends the core Template with dashboard-specific fields.
+ * Uses Partial<Template> for backward compatibility during migration.
+ */
+export interface DashboardTemplate extends Partial<Template> {
+  // Required fields (always present)
   id: string;
   name: string;
   description: string;
-  thumbnail?: string;
-  placeholderCount: number;
-  placeholders?: PlaceholderDefinition[]; // Optional for backward compatibility
   duration: number;
   createdAt: Date;
   updatedAt: Date;
-  // The raw template data from automation package
+  
+  // Dashboard-specific
+  placeholderCount: number;
+  thumbnail?: string;
+  
+  // Legacy field for backward compatibility
   templateData?: unknown;
 }
 
@@ -36,6 +43,7 @@ interface TemplateStore {
   // State
   templates: DashboardTemplate[];
   projects: DashboardProject[];
+  favorites: string[]; // List of favorite template IDs
   isLoading: boolean;
   selectedTemplateId: string | null;
 
@@ -44,7 +52,8 @@ interface TemplateStore {
   updateTemplate: (id: string, updates: Partial<DashboardTemplate>) => void;
   deleteTemplate: (id: string) => void;
   selectTemplate: (id: string | null) => void;
-  removeTemplate: (id: string) => void; // Added alias to match interface
+  removeTemplate: (id: string) => void;
+  toggleFavorite: (id: string) => void;
 
   // Project actions
   addProject: (project: DashboardProject) => void;
@@ -64,14 +73,20 @@ interface TemplateStore {
 export const useTemplateStore = create<TemplateStore>((set, get) => ({
   templates: [],
   projects: [],
+  favorites: [],
   isLoading: false,
   selectedTemplateId: null,
 
   addTemplate: (template) => {
-    set((state) => ({
-      templates: [template, ...state.templates],
-    }));
-    // Async DB update
+    set((state) => {
+      if (state.templates.some((t) => t.id === template.id)) {
+        return state;
+      }
+      return {
+        templates: [template, ...state.templates],
+      };
+    });
+    // Async DB update - still safe to call as it overwrites by key
     dbAdapter.set(`templates:${template.id}`, template);
   },
 
@@ -94,11 +109,24 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
     dbAdapter.delete(`templates:${id}`);
   },
 
-  // Alias for compatibility if needed, or standardized
+  // Alias for compatibility
   removeTemplate: (id) => get().deleteTemplate(id),
 
   selectTemplate: (id) =>
     set({ selectedTemplateId: id }),
+
+  toggleFavorite: (id) => {
+    set((state) => {
+      const isFavorite = state.favorites.includes(id);
+      const newFavorites = isFavorite
+        ? state.favorites.filter((favId) => favId !== id)
+        : [...state.favorites, id];
+      
+      // Persist favorites
+      dbAdapter.set("user:favorites", newFavorites);
+      return { favorites: newFavorites };
+    });
+  },
 
   addProject: (project) => {
     set((state) => ({
@@ -140,6 +168,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
       
       const templates = await Promise.all(templateKeys.map(key => dbAdapter.get<DashboardTemplate>(key)));
       const projects = await Promise.all(projectKeys.map(key => dbAdapter.get<DashboardProject>(key)));
+      const favorites = await dbAdapter.get<string[]>("user:favorites") || [];
       
       // Filter out nulls and sort
       const validTemplates = templates.filter((t): t is DashboardTemplate => t !== null)
@@ -151,6 +180,7 @@ export const useTemplateStore = create<TemplateStore>((set, get) => ({
       set({ 
         templates: validTemplates,
         projects: validProjects,
+        favorites,
         isLoading: false
       });
     } catch (e) {

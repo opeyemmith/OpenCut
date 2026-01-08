@@ -13,6 +13,14 @@ export interface NewTemplateData {
   name: string;
   description: string;
   projectId?: string;
+  id?: string; // Add ID for editing
+}
+
+interface CreateTemplateDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (template: NewTemplateData) => void;
+  initialData?: NewTemplateData | null; // For editing
 }
 
 const recentProjects = [
@@ -25,11 +33,21 @@ export function CreateTemplateDialog({
   isOpen,
   onClose,
   onSubmit,
+  initialData,
 }: CreateTemplateDialogProps) {
-  const [step, setStep] = useState<"source" | "details">("source");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  // If editing (initialData exists), start at 'details', else 'source'
+  const [step, setStep] = useState<"source" | "details">(initialData ? "details" : "source");
+  const [name, setName] = useState(initialData?.name || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(initialData?.projectId || null);
+
+  // Reset or update state when dialog opens/changes
+  // Note: key change in parent is often better, but we can sync here
+  if (isOpen && initialData && name !== initialData.name && step === "source") {
+     setName(initialData.name);
+     setDescription(initialData.description);
+     setStep("details");
+  }
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -38,14 +56,21 @@ export function CreateTemplateDialog({
       name: name.trim(),
       description: description.trim(),
       projectId: selectedProjectId || undefined,
+      id: initialData?.id, // Pass back ID if editing
     });
     
-    setStep("source");
-    setName("");
-    setDescription("");
-    setSelectedProjectId(null);
+    // Reset handled by parent closing/reopening, but good practice to clear
+    if (!initialData) {
+      setStep("source");
+      setName("");
+      setDescription("");
+      setSelectedProjectId(null);
+    }
     onClose();
   };
+
+  const isEditing = !!initialData;
+
 
   const handleNext = () => {
     if (selectedProjectId) {
@@ -61,15 +86,17 @@ export function CreateTemplateDialog({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div 
-        className="bg-[#1a1a1a] border border-[#333] rounded-2xl w-full max-w-[520px] max-h-[85vh] flex flex-col"
+        className="bg-[#1a1a1a] border border-[#333] rounded-2xl w-full max-w-[520px] max-h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center justify-between px-6 py-5 border-b border-[#333]">
-          <h2 className="text-xl font-semibold text-white">Create Template</h2>
+          <h2 className="text-xl font-semibold text-white">
+            {isEditing ? "Edit Template" : "Create Template"}
+          </h2>
           <button 
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
@@ -81,6 +108,7 @@ export function CreateTemplateDialog({
         <div className="p-6 overflow-y-auto">
           {step === "source" && (
             <>
+              {/* Source selection content (unchanged) */}
               <p className="text-gray-300 mb-6">
                 Select an OpenCut project to use as the base for your template
               </p>
@@ -126,7 +154,7 @@ export function CreateTemplateDialog({
           {step === "details" && (
             <>
               <p className="text-gray-300 mb-6">
-                Configure your template settings
+                {isEditing ? "Update your template details" : "Configure your template settings"}
               </p>
 
               <div className="mb-5">
@@ -169,7 +197,7 @@ export function CreateTemplateDialog({
         </div>
 
         <footer className="flex items-center gap-3 px-6 py-4 border-t border-[#333]">
-          {step === "details" && (
+          {step === "details" && !isEditing && (
             <button 
               onClick={handleBack}
               className="px-4 py-2.5 border border-[#333] rounded-lg text-gray-300 hover:bg-[#222] hover:text-white transition-all"
@@ -198,7 +226,7 @@ export function CreateTemplateDialog({
               disabled={!name.trim()}
               className="px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Template
+              {isEditing ? "Save Changes" : "Create Template"}
             </button>
           )}
         </footer>

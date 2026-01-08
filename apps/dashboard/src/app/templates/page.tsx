@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreateTemplateDialog, UseTemplateDialog, type NewTemplateData } from "@/components";
 import { useTemplateStore, type DashboardTemplate } from "@/stores/template-store";
 import { launchEditor } from "@clipfactory/opencut-engine";
@@ -17,8 +17,19 @@ import {
   Globe,
   Star,
   Users,
-  Search
+  Search,
+  LayoutGrid,
+  ArrowUpDown
 } from "lucide-react";
+import { TemplateCard, type PopularTemplate } from "@/components/templates/template-card";
+import { TemplatePreviewDialog } from "@/components/templates/template-preview-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TabType = "private" | "popular";
 
@@ -57,13 +68,8 @@ const privateTemplates: DashboardTemplate[] = [
 ];
 
 // Popular/Public templates
-interface PopularTemplate extends DashboardTemplate {
-  uses: number;
-  rating: number;
-  author: string;
-  gradient: string;
-  category: string;
-}
+// Popular/Public templates
+// Interface imported from TemplateCard to ensure consistency
 
 const popularTemplates: PopularTemplate[] = [
   {
@@ -161,47 +167,89 @@ const popularTemplates: PopularTemplate[] = [
 export default function TemplatesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<DashboardTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<NewTemplateData | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<PopularTemplate | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("private");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("popular");
   
+  const templates = useTemplateStore((state) => state.templates);
+  const favorites = useTemplateStore((state) => state.favorites);
   const addTemplate = useTemplateStore((state) => state.addTemplate);
+  const updateTemplate = useTemplateStore((state) => state.updateTemplate);
+  const toggleFavorite = useTemplateStore((state) => state.toggleFavorite);
   const addProject = useTemplateStore((state) => state.addProject);
 
+  // Seed store with mock data if empty
+  useEffect(() => {
+    if (templates.length === 0) {
+      privateTemplates.forEach(t => addTemplate(t));
+    }
+  }, []);
+
   // Get unique categories from popular templates
-  const categories = ["all", ...new Set(popularTemplates.map(t => t.category))];
+  const categories: string[] = ["all", ...new Set(popularTemplates.map(t => t.category).filter((c): c is string => c !== undefined))];
 
   // Filter templates based on search and category
-  const filteredPopularTemplates = popularTemplates.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          template.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || template.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPopularTemplates = popularTemplates
+    .filter(template => {
+      const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            template.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || template.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "recent":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "popular":
+        default:
+          return (b.uses ?? 0) - (a.uses ?? 0);
+      }
+    });
 
-  const filteredPrivateTemplates = privateTemplates.filter(template =>
+  const filteredPrivateTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     template.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateTemplate = (data: NewTemplateData) => {
-    const newTemplate: DashboardTemplate = {
-      id: `template-${Date.now()}`,
-      name: data.name,
-      description: data.description,
-      placeholderCount: 0,
-      duration: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    addTemplate(newTemplate);
-    toast.success(`Template "${data.name}" created successfully!`);
+    if (data.id) {
+      // Handle Update
+      updateTemplate(data.id, {
+        name: data.name,
+        description: data.description,
+      });
+      toast.success(`Template updated successfully!`);
+    } else {
+      // Handle Create
+      const newTemplate: DashboardTemplate = {
+        id: `template-${Date.now()}`,
+        name: data.name,
+        description: data.description,
+        placeholderCount: 0,
+        duration: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      addTemplate(newTemplate);
+      toast.success(`Template "${data.name}" created successfully!`);
+    }
   };
 
   const handleUseTemplate = (template: DashboardTemplate) => {
     setSelectedTemplate(template);
+    // Close preview if open
+    setPreviewTemplate(null);
   };
+
+  const handlePreviewTemplate = (template: PopularTemplate) => {
+    setPreviewTemplate(template);
+  };
+
 
   const handleGenerateProject = (projectName: string, inputs: Record<string, string>) => {
     if (!selectedTemplate) return;
@@ -224,7 +272,15 @@ export default function TemplatesPage() {
   };
 
   const handleEditTemplate = (templateId: string) => {
-    toast.info("Template editing coming soon!");
+    const templateToEdit = templates.find(t => t.id === templateId);
+    if (!templateToEdit) return;
+
+    setEditingTemplate({
+      id: templateToEdit.id,
+      name: templateToEdit.name,
+      description: templateToEdit.description,
+    });
+    setIsCreateDialogOpen(true);
   };
 
   const handleDeleteTemplate = (templateId: string) => {
@@ -317,75 +373,43 @@ export default function TemplatesPage() {
           />
         </div>
         
-        {activeTab === "popular" && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-[var(--text-muted)]">Category:</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat === "all" ? "All Categories" : cat}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {activeTab === "popular" && (
+            <>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="h-10 w-[140px] bg-[var(--bg-card)] border-[var(--border-default)] rounded-lg text-sm text-[var(--text-primary)] focus:ring-[var(--accent)]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="bg-[var(--bg-card)] border-[var(--border-default)]">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map(cat => (
+                    cat !== "all" && <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-10 w-[140px] bg-[var(--bg-card)] border-[var(--border-default)] rounded-lg text-sm text-[var(--text-primary)] focus:ring-[var(--accent)]">
+                  <SelectValue placeholder="Most Popular" />
+                </SelectTrigger>
+                <SelectContent className="bg-[var(--bg-card)] border-[var(--border-default)]">
+                  <SelectItem value="popular">Most Popular</SelectItem>
+                  <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Private Templates Grid */}
       {activeTab === "private" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredPrivateTemplates.map((template) => (
-            <article
-              key={template.id}
-              className="bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl overflow-hidden hover:border-[var(--accent)] transition-all duration-300 hover:-translate-y-1 card-glow flex flex-col group"
-            >
-              <div className="h-40 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-glass)] flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
-                <Film className="w-12 h-12 text-[var(--text-muted)] group-hover:text-[var(--accent)] group-hover:scale-110 transition-all duration-300" />
-              </div>
-              <div className="flex-1 p-5">
-                <h3 className="text-lg font-semibold mb-2 text-[var(--text-primary)]">{template.name}</h3>
-                <p className="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">{template.description}</p>
-                <div className="flex gap-4 text-xs text-[var(--text-muted)]">
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" />
-                    {template.placeholderCount} placeholders
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {template.duration}s
-                  </span>
-                </div>
-              </div>
-              <div className="flex border-t border-[var(--border-default)] bg-[var(--bg-elevated)]/30">
-                <button
-                  onClick={() => handleUseTemplate(template)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--accent)] hover:text-white transition-all border-r border-[var(--border-default)] font-medium"
-                >
-                  <Play className="w-4 h-4" />
-                  Use
-                </button>
-                <button
-                  onClick={() => handleEditTemplate(template.id)}
-                  className="flex-1 flex items-center justify-center py-3 text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors border-r border-[var(--border-default)]"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteTemplate(template.id)}
-                  className="flex-1 flex items-center justify-center py-3 text-[var(--text-secondary)] hover:bg-[var(--error-bg)] hover:text-[var(--error)] transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </article>
-          ))}
-
+          {/* Create New Card - Always first */}
           <article
             onClick={() => setIsCreateDialogOpen(true)}
-            className="min-h-[280px] border-2 border-dashed border-[var(--border-default)] rounded-xl flex items-center justify-center cursor-pointer hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)]/10 transition-all duration-300 group"
+            className="min-h-[280px] border-2 border-dashed border-[var(--border-default)] rounded-xl flex items-center justify-center cursor-pointer hover:border-[var(--accent)] hover:bg-[var(--accent-subtle)]/10 transition-all duration-300 group h-full"
           >
             <div className="text-center text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
               <div className="w-16 h-16 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:bg-[var(--accent)]/10">
@@ -397,6 +421,18 @@ export default function TemplatesPage() {
               </p>
             </div>
           </article>
+
+          {filteredPrivateTemplates.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template as PopularTemplate}
+              onUse={() => handleUseTemplate(template)}
+              onEdit={handleEditTemplate}
+              onDelete={handleDeleteTemplate}
+              isFavorite={favorites.includes(template.id)}
+              onToggleFavorite={toggleFavorite}
+            />
+          ))}
         </div>
       )}
 
@@ -404,59 +440,16 @@ export default function TemplatesPage() {
       {activeTab === "popular" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPopularTemplates.map((template) => (
-            <article
+            <TemplateCard
               key={template.id}
-              className="bg-[var(--bg-card)] border border-[var(--border-default)] rounded-xl overflow-hidden hover:border-[var(--accent)] transition-all duration-300 hover:-translate-y-1 card-glow flex flex-col group"
-            >
-              {/* Gradient Thumbnail */}
-              <div className={`h-36 bg-gradient-to-br ${template.gradient} flex items-center justify-center relative overflow-hidden`}>
-                <Film className="w-12 h-12 text-white/80 group-hover:scale-110 transition-transform duration-300" />
-                {/* Category badge */}
-                <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-medium rounded-full bg-black/30 backdrop-blur-sm text-white">
-                  {template.category}
-                </span>
-                {/* Rating */}
-                <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white">
-                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="text-[10px] font-medium">{template.rating}</span>
-                </div>
-              </div>
-              
-              <div className="flex-1 p-4">
-                <h3 className="font-semibold mb-1 text-[var(--text-primary)] truncate">{template.name}</h3>
-                <p className="text-xs text-[var(--text-secondary)] mb-3 line-clamp-2">{template.description}</p>
-                
-                <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5" />
-                    {template.uses.toLocaleString()} uses
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {template.duration}s
-                  </span>
-                </div>
-                
-                <p className="text-[10px] text-[var(--text-dim)] mt-2">by {template.author}</p>
-              </div>
-              
-              <div className="flex border-t border-[var(--border-default)] bg-[var(--bg-elevated)]/30">
-                <button
-                  onClick={() => handleUseTemplate(template)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--accent)] hover:text-white transition-all border-r border-[var(--border-default)] font-medium"
-                >
-                  <Play className="w-4 h-4" />
-                  Use
-                </button>
-                <button
-                  onClick={() => handleCloneTemplate(template)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-all font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Clone
-                </button>
-              </div>
-            </article>
+              template={template}
+              isPopular={true}
+              onUse={() => handleUseTemplate(template)}
+              onPreview={handlePreviewTemplate}
+              onClone={handleCloneTemplate}
+              isFavorite={favorites.includes(template.id)}
+              onToggleFavorite={toggleFavorite}
+            />
           ))}
         </div>
       )}
@@ -476,8 +469,12 @@ export default function TemplatesPage() {
 
       <CreateTemplateDialog
         isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
+        onClose={() => {
+          setIsCreateDialogOpen(false);
+          setEditingTemplate(null);
+        }}
         onSubmit={handleCreateTemplate}
+        initialData={editingTemplate}
       />
 
       <UseTemplateDialog
@@ -485,6 +482,13 @@ export default function TemplatesPage() {
         template={selectedTemplate}
         onClose={() => setSelectedTemplate(null)}
         onSubmit={handleGenerateProject}
+      />
+
+      <TemplatePreviewDialog
+        isOpen={previewTemplate !== null}
+        template={previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+        onUseTemplate={handleUseTemplate}
       />
     </div>
   );
